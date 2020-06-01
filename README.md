@@ -18,7 +18,7 @@ Explnode is a NodeJs based application that is seeded with vulnerable conditions
 | [`xxe.js`](https://github.com/conikeec/explnode/blob/master/vulnerabilities/xxe.js)               | XXE Attack                                                      |
 
 ### Threat Modeling Queries
-'[`Queries`](https://github.com/conikeec/explnode/blob/master/ocular_notebook/vulns.sc)
+[`Queries`](https://github.com/conikeec/explnode/blob/master/ocular_notebook/vulns.sc)
 
 ## :warning: Disclaimer
 
