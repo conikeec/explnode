@@ -312,5 +312,9 @@ res35: List[String] = List(
 """
 )
 
+// 9. All Findings based on automated security profile
+// --------------------------------------------------------------------------------------
+
+cpg.finding.toJsonPretty
 
 
