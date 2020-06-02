@@ -255,6 +255,35 @@ res25: List[String] = List(
 // 7. Server Side Request Forgery (ssrf.js)
 // --------------------------------------------------------------------------------------
 
+// Goal is to find a flow from the req param of handler function of /downlad-url to the request method's first param
+// ensuring that its passing through "followAllRedirects: true" option as one of the tracked data:
+
+var source = cpg.method.name(".*=>.*").parameter 
+
+var sink = cpg.method.name(".*request.*").parameter 
+
+ocular> sink.reachableBy(source).flows.passes(_.ast.isCall.code(".*followAllRedirects.*true.*")).p 
+res33: List[String] = List(
+  """ _________________________________________________________________________________________________________________________________________
+ | tracked                                                                    | lineNumber| method               | file                   |
+ |========================================================================================================================================|
+ | url                                                                        | 11        | :=>                  | vulnerabilities/ssrf.js|
+ | url                                                                        | 13        | :=>                  | vulnerabilities/ssrf.js|
+ | p2                                                                         | N/A       | <operator>.assignment|                        |
+ | p1                                                                         | N/A       | <operator>.assignment|                        |
+ | _tmp_0.uri                                                                 | 13        | :=>                  | vulnerabilities/ssrf.js|
+ | {
+      uri: url,
+      method: 'GET',
+      followAllRedirects: true
+    }| 12        | :=>                  | vulnerabilities/ssrf.js|
+ | p2                                                                         | N/A       | <operator>.assignment|                        |
+ | p1                                                                         | N/A       | <operator>.assignment|                        |
+ | opts                                                                       | 12        | :=>                  | vulnerabilities/ssrf.js|
+ | opts                                                                       | 18        | :=>                  | vulnerabilities/ssrf.js|
+ | p1                                                                         | N/A       | request              |                        |
+"""
+)
 
 // 8. Cross Site Scripting (xss.js)
 // --------------------------------------------------------------------------------------
