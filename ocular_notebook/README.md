@@ -1,21 +1,44 @@
-// Startup Ocular REPL 
-// -------------------
+# Vulnerability Discovery via Ocular Queries
 
+### Startup Ocular Shell 
+
+```bash
 sl ocular
+```
 
-// create CPG from source 
-// ----------------------
+Ocular shell starts up and looks like this:
 
+```
+ ██████╗  ██████╗██╗   ██╗██╗      █████╗ ██████╗
+██╔═══██╗██╔════╝██║   ██║██║     ██╔══██╗██╔══██╗
+██║   ██║██║     ██║   ██║██║     ███████║██████╔╝
+██║   ██║██║     ██║   ██║██║     ██╔══██║██╔══██╗
+╚██████╔╝╚██████╗╚██████╔╝███████╗██║  ██║██║  ██║
+ ╚═════╝  ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ 
+Version: 0.3.114
+Type `help` or `browse(help)` to begin
+ocular>
+```
+
+> :information_source: Note: Following commands are now run on the Ocular Shell
+
+### Import Code and create a CPG 
+
+```scala
 importCode("/Users/chetanconikee/pgithub/explnode")
+```
 
-// Apply Policies to graph  
-// -----------------------
+### Apply Policies to graph  
 
+```scala
 run.securityprofile
+```
 
-// get AttackSurface of Application
-// ---------------------------------
+### Get Attack Surface of Application
 
+Copy paste hte following directly on the ocular shell to create a new class and a new `getAttackSurface` method.
+
+```scala
 case class AttackSurface(shortMethodName : String, fullMethodName : String, route : String)
 
 def getAttackSurface(cpg: io.shiftleft.codepropertygraph.Cpg) : List[AttackSurface] = {
@@ -25,17 +48,25 @@ def getAttackSurface(cpg: io.shiftleft.codepropertygraph.Cpg) : List[AttackSurfa
 			m.tagList.filter(t => t.name == "EXPOSED_METHOD_ROUTE").map(_.value).mkString(""))
 	}.l
 }
+```
 
-val attackSurface = getAttackSurface(cpg)
+Use the method directly on the Ocular shell and get the attack surface:
 
-// get Exposed Sources in Application (this represents all exposed API endpoints in code)
-// --------------------------------------------------------------------------------------
+```scala
+getAttackSurface(cpg)
+```
 
+### Get Exposed Sources in Application (this represents all exposed API endpoints in code) 
+
+```scala
 val source = cpg.method.filter(_.tag.name("EXPOSED_METHOD")).parameter
+```
 
-// 1. Remote Code Execution based finding (exec.js)
-// --------------------------------------------------------------------------------------
+## Finding Vulnerabilties
 
+### 1. Remote Code Execution based finding (`exec.js`)
+
+```scala
 val sink = cpg.method.name(".*spawn.*").parameter
 
 sink.reachableBy(source).flows.p
@@ -55,10 +86,11 @@ res8: List[String] = List(
  | p1            | N/A       | spawn                |                        |
 """
 )
+```
 
-// 2. Denial of Service Attack (loop.js)
-// --------------------------------------------------------------------------------------
+### 2. Denial of Service Attack (`loop.js`)
 
+```scala
 cpg.call.code(".*push.*").inAst.isControlStructure.parserTypeName("For.*").code.l 
 
 res31: List[String] = List(
@@ -102,11 +134,11 @@ res33: List[String] = List(
  | someArr       | 11        | :=>                  | vulnerabilities/loop.js|
 """
 )
+```
 
+### 3. NoSQL  Injection (`nosqli.js`)
 
-// 3. NoSql  Injection (nosqli.js)
-// --------------------------------------------------------------------------------------
-
+```scala
 val sink = cpg.method.name(".*insertOne.*").parameter
 
 sink.reachableBy(source).flows.p
@@ -143,10 +175,11 @@ res14: List[String] = List(
  | p1                                                | N/A       | insertOne            |                          |
 """
 )
+```
 
-// 4. Redirect (redirect.js) SSRF
-// --------------------------------------------------------------------------------------
+### 4. Redirect (`redirect.js`) SSRF
 
+```scala
 val sink = cpg.method.name(".*redirect.*").parameter
 
 sink.reachableBy(source).flows.p
@@ -168,10 +201,11 @@ res15: List[String] = List(
 """
 )
 
+```
 
-// 5. RegexDOS (redos.js)
-// --------------------------------------------------------------------------------------
+### 5. RegexDOS (`redos.js`)
 
+```scala
 val sink = cpg.method.name(".*test.*").parameter
 
 sink.reachableBy(source).flows.p
@@ -184,10 +218,11 @@ res19: List[String] = List(
  | p1           | N/A       | test  |                         |
 """
 )
+```
 
-// 6. SQL Injection (sqli.js)
-// --------------------------------------------------------------------------------------
+### 6. SQL Injection (`sqli.js`)
 
+```scala
 val sink = cpg.method.fullName(".*query.*").parameter
 
 sink.reachableBy(source).flows.p
@@ -252,12 +287,13 @@ res25: List[String] = List(
 """
 )
 
-// 7. Server Side Request Forgery (ssrf.js)
-// --------------------------------------------------------------------------------------
+```
 
-// Goal is to find a flow from the req param of handler function of /downlad-url to the request method's first param
-// ensuring that its passing through "followAllRedirects: true" option as one of the tracked data:
+### 7. Server Side Request Forgery (`ssrf.js`)
 
+Goal is to find a flow from the req param of handler function of `/downlad-url` to the request method's first param ensuring that it is passing through "followAllRedirects: true" option as one of the tracked data:
+
+```scala
 var source = cpg.method.name(".*=>.*").parameter 
 
 var sink = cpg.method.name(".*request.*").parameter 
@@ -284,10 +320,11 @@ res33: List[String] = List(
  | p1                                                                         | N/A       | request              |                        |
 """
 )
+```
 
-// 8. Cross Site Scripting (xss.js)
-// --------------------------------------------------------------------------------------
+### 8. Cross Site Scripting (`xss.js`)
 
+```scala
 val sink = cpg.method.fullName(".*(send|render).*").parameter
 
 sink.reachableBy(source).flows.p
@@ -320,10 +357,11 @@ res25: List[String] = List(
  | "<h1> Hello :" + name + "</h1>"| 6         | :=>                  | vulnerabilities/xss.js|
  | p1                             | N/A       | send                 |                       |
 """)
+```
 
-// 9. XXE (xxe.js)
-// --------------------------------------------------------------------------------------
+### 9. XXE (`xxe.js`)
 
+```scala
 val sink = cpg.call.code(".*parseXmlString.*").code(".*noent:true.*").argument
 
 sink.reachableBy(source).flows.p
@@ -340,10 +378,19 @@ res35: List[String] = List(
  | XMLfile                | 8         | :=>                  | vulnerabilities/xxe.js|
 """
 )
+```
 
-// 9. All Findings based on automated security profile
-// --------------------------------------------------------------------------------------
+### 9. All Findings (based on automated security profile)
 
+Table of Findings in text format: 
+
+```scala
+cpg.finding.p
+```
+
+Consumable JSON Format:
+
+```scala
 cpg.finding.toJsonPretty
-
+```
 
