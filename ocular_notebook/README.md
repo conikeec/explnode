@@ -25,13 +25,31 @@ ocular>
 ### Import Code and create a CPG 
 
 ```scala
-importCode("/Users/chetanconikee/pgithub/explnode")
+val CODE_PATH = "/Users/chetanconikee/pgithub/explnode"
+val PACKAGE_FILE = "/Users/chetanconikee/pgithub/explnode/package.json"
+
+importCode(CODE_PATH)
 ```
 
 ### Apply Policies to graph  
 
 ```scala
 run.securityprofile
+```
+
+### SCA (Package Dependencies)
+
+```scala
+
+//get dependencies (name, version) pair from manifest
+def getDependencies(packageJsonFile : String) : Map[String,String] = {
+    val packageString = os.read(os.Path(packageJsonFile))
+    val packageData = ujson.read(packageString)
+    packageData.obj("dependencies").obj.toMap.map { case(k,v)=> k->v.toString.replaceAll("\"","") }
+}
+
+getDependencies(PACKAGE_FILE)
+
 ```
 
 ### Initialize method names / signatures (example)
