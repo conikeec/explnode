@@ -1,5 +1,11 @@
 # Vulnerability Discovery via Ocular Queries
 
+### Install package dependencies to create lock file
+
+```bash
+npm install
+```
+
 ### Startup Ocular Shell 
 
 ```bash
@@ -27,6 +33,7 @@ ocular>
 ```scala
 val CODE_PATH = "/Users/chetanconikee/pgithub/explnode"
 val PACKAGE_FILE = "/Users/chetanconikee/pgithub/explnode/package.json"
+val PACKAGE_LOCK_FILE = "/Users/chetanconikee/pgithub/explnode/package-lock.json"
 
 importCode(CODE_PATH)
 ```
@@ -49,6 +56,21 @@ def getDependencies(packageJsonFile : String) : Map[String,String] = {
 }
 
 getDependencies(PACKAGE_FILE)
+
+```
+
+### SCA (Package lock Dependencies)
+
+```scala
+
+//get all dependencies (name, version) pair from manifest
+def getAllDependencies(packageJsonFile : String) : Map[String,String] = {
+    val packageString = os.read(os.Path(packageJsonFile))
+    val packageData = ujson.read(packageString)
+    packageData.obj("dependencies").obj.toMap.map { case(k,v)=> k->v.obj("version").toString.replaceAll("\"","") }
+}
+
+getAllDependencies(PACKAGE_LOCK_FILE)
 
 ```
 
