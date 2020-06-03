@@ -397,6 +397,10 @@ res25: List[String] = List(
 
 ### 9. XXE (`xxe.js`)
 
+Parsing untrusted XML files with a weakly configured XML parser may lead to an XML External Entity (XXE) attack. This type of attack uses external entity references to access arbitrary files on a system, carry out denial-of-service (DoS) attacks, or server-side request forgery. Even when the result of parsing is not returned to the user, DoS attacks are still possible and out-of-band data retrieval techniques may allow attackers to steal sensitive data.
+The easiest way to prevent XXE attacks is to disable external entity handling when parsing untrusted data. How this is done depends on the library being used. Note that some libraries, such as recent versions of libxml, disable `entity expansion by default`, so unless you have explicitly enabled entity expansion, no further action needs to be taken.
+To guard against XXE attacks, the `noent` option should be omitted or set to false.
+
 ```scala
 val sink = cpg.call.code(XXE).code(XXE_NOENT).argument
 
