@@ -71,7 +71,7 @@ val XXE_NOENT = ".*noent:true.*"
 
 ### Get Attack Surface of Application
 
-Copy paste hte following directly on the ocular shell to create a new class and a new `getAttackSurface` method.
+Copy paste the following directly on the ocular shell to create a new class and a new `getAttackSurface` method.
 
 ```scala
 case class AttackSurface(shortMethodName : String, fullMethodName : String, route : String)
@@ -91,7 +91,7 @@ Use the method directly on the Ocular shell and get the attack surface:
 getAttackSurface(cpg)
 ```
 
-### Get Exposed Sources in Application (this represents all exposed API endpoints in code) 
+### Get Exposed Sources in Application (this represents all exposed API endpoints in code)
 
 ```scala
 val source = cpg.method.filter(_.tag.name("EXPOSED_METHOD")).parameter
