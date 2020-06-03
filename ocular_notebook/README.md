@@ -34,6 +34,23 @@ importCode("/Users/chetanconikee/pgithub/explnode")
 run.securityprofile
 ```
 
+### Initialize method names / signatures (example)
+
+```scala
+val CMD_INJECTION = ".*(spawn).*"
+val CONTROL_LOOP = "For.*"
+val MEM_OP = ".*(push).*"
+val NOSQLi = ".*(insertOne).*"
+val REDIRECT = ".*(redirect).*"
+val ReDOS = ".*(test).*"
+val SQLi = ".*(query).*"
+val SSRF = ".*(request).*"
+val FOLLOW_REDIRECTS = ".*followAllRedirects.*true.*"
+val XSS = ".*(send|render).*"
+val XXE = ".*parseXmlString.*"
+val XXE_NOENT = ".*noent:true.*"
+```
+
 ### Get Attack Surface of Application
 
 Copy paste hte following directly on the ocular shell to create a new class and a new `getAttackSurface` method.
@@ -60,6 +77,7 @@ getAttackSurface(cpg)
 
 ```scala
 val source = cpg.method.filter(_.tag.name("EXPOSED_METHOD")).parameter
+val api = cpg.method.name(".*=>.*").parameter
 ```
 
 ## Finding Vulnerabilties
@@ -67,7 +85,7 @@ val source = cpg.method.filter(_.tag.name("EXPOSED_METHOD")).parameter
 ### 1. Remote Code Execution based finding (`exec.js`)
 
 ```scala
-val sink = cpg.method.name(".*spawn.*").parameter
+val sink = cpg.method.name(CMD_INJECTION).parameter
 
 sink.reachableBy(source).flows.p
 
@@ -91,7 +109,7 @@ res8: List[String] = List(
 ### 2. Denial of Service Attack (`loop.js`)
 
 ```scala
-cpg.call.code(".*push.*").inAst.isControlStructure.parserTypeName("For.*").code.l 
+cpg.call.code(MEM_OP).inAst.isControlStructure.parserTypeName(CONTROL_LOOP).code.l 
 
 res31: List[String] = List(
   """for (var i = 0; i < obj.length; i++) {
@@ -102,7 +120,7 @@ res31: List[String] = List(
     }"""
 )
 
-val sink = cpg.call.code(".*push.*").filter(_.inAst.isControlStructure.parserTypeName("For.*"))
+val sink = cpg.call.code(MEM_OP).filter(_.inAst.isControlStructure.parserTypeName(CONTROL_LOOP))
 
 sink.reachableBy(source).flows.p
 
@@ -139,7 +157,7 @@ res33: List[String] = List(
 ### 3. NoSQL  Injection (`nosqli.js`)
 
 ```scala
-val sink = cpg.method.name(".*insertOne.*").parameter
+val sink = cpg.method.name(NOSQLi).parameter
 
 sink.reachableBy(source).flows.p
 
@@ -180,7 +198,7 @@ res14: List[String] = List(
 ### 4. Redirect (`redirect.js`) SSRF
 
 ```scala
-val sink = cpg.method.name(".*redirect.*").parameter
+val sink = cpg.method.name(REDIRECT).parameter
 
 sink.reachableBy(source).flows.p
 
@@ -206,7 +224,7 @@ res15: List[String] = List(
 ### 5. RegexDOS (`redos.js`)
 
 ```scala
-val sink = cpg.method.name(".*test.*").parameter
+val sink = cpg.method.name(ReDOS).parameter
 
 sink.reachableBy(source).flows.p
 res19: List[String] = List(
@@ -223,7 +241,7 @@ res19: List[String] = List(
 ### 6. SQL Injection (`sqli.js`)
 
 ```scala
-val sink = cpg.method.fullName(".*query.*").parameter
+val sink = cpg.method.fullName(SQLi).parameter
 
 sink.reachableBy(source).flows.p
 res25: List[String] = List(
@@ -294,11 +312,10 @@ res25: List[String] = List(
 Goal is to find a flow from the req param of handler function of `/downlad-url` to the request method's first param ensuring that it is passing through "followAllRedirects: true" option as one of the tracked data:
 
 ```scala
-var source = cpg.method.name(".*=>.*").parameter 
+val sink = cpg.method.name(SSRF).parameter
 
-var sink = cpg.method.name(".*request.*").parameter 
+sink.reachableBy(api).flows.passes(_.ast.isCall.code(FOLLOW_REDIRECTS)).p
 
-ocular> sink.reachableBy(source).flows.passes(_.ast.isCall.code(".*followAllRedirects.*true.*")).p 
 res33: List[String] = List(
   """ _________________________________________________________________________________________________________________________________________
  | tracked                                                                    | lineNumber| method               | file                   |
@@ -325,9 +342,10 @@ res33: List[String] = List(
 ### 8. Cross Site Scripting (`xss.js`)
 
 ```scala
-val sink = cpg.method.fullName(".*(send|render).*").parameter
+val sink = cpg.method.fullName(XSS).parameter
 
 sink.reachableBy(source).flows.p
+
 res25: List[String] = List(
 """ _____________________________________________________
  | tracked| lineNumber| method| file                  |
@@ -362,7 +380,7 @@ res25: List[String] = List(
 ### 9. XXE (`xxe.js`)
 
 ```scala
-val sink = cpg.call.code(".*parseXmlString.*").code(".*noent:true.*").argument
+val sink = cpg.call.code(XXE).code(XXE_NOENT).argument
 
 sink.reachableBy(source).flows.p
 
