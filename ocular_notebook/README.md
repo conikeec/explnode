@@ -419,8 +419,15 @@ res35: List[String] = List(
 """
 )
 ```
+### 10. Prototyp polution 
+```
+val source = cpg.method.filter(_.tag.name("EXPOSED_METHOD")).parameter
+val sink = cpg.method.filter(_.parameter.tag.value("prototypePolution")).parameter
+sink.reachableBy(source).flows.p
+```
 
-### 9. All Findings (based on automated security profile)
+
+### 11. All Findings (based on automated security profile)
 
 Table of Findings in text format: 
 
